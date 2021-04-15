@@ -15,6 +15,7 @@ import com.unimelb.swen30006.wifimodem.WifiModem;
 import automail.Automail;
 import automail.MailItem;
 import automail.MailPool;
+import automail.ChargeCalculator;
 
 /**
  * This class simulates the behaviour of AutoMail
@@ -23,6 +24,8 @@ public class Simulation {
 	private static int NUM_ROBOTS;
 	private static double CHARGE_THRESHOLD;
 	private static boolean CHARGE_DISPLAY;
+	private static double ACTIVITY_UNIT_PRICE;
+	private static double MARKUP_PERCENTAGE;
 	
     /** Constant for the mail generator */
     private static int MAIL_TO_CREATE;
@@ -31,7 +34,7 @@ public class Simulation {
     private static ArrayList<MailItem> MAIL_DELIVERED;
     private static double total_delay = 0;
     private static WifiModem wModem = null;
-
+	public static ChargeCalculator calculator;
     public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     	
     	/** Load properties for simulation based on either default or a properties file.**/
@@ -68,7 +71,8 @@ public class Simulation {
 		} catch (Exception mException) {
 			mException.printStackTrace();
 		}
-        
+        calculator = new ChargeCalculator(ACTIVITY_UNIT_PRICE,MARKUP_PERCENTAGE, wModem);
+		
         /**
          * This code section is for running a simulation
          */
@@ -76,7 +80,6 @@ public class Simulation {
      	MailPool mailPool = new MailPool(NUM_ROBOTS);
         Automail automail = new Automail(mailPool, new ReportDelivery(), NUM_ROBOTS);
         MailGenerator mailGenerator = new MailGenerator(MAIL_TO_CREATE, MAIL_MAX_WEIGHT, mailPool, seedMap);
-        
         /** Generate all the mails */
         mailGenerator.generateAllMail();
         while(MAIL_DELIVERED.size() != mailGenerator.MAIL_TO_CREATE) {
@@ -106,7 +109,12 @@ public class Simulation {
     	automailProperties.setProperty("Mail_to_Create", "80");
     	automailProperties.setProperty("ChargeThreshold", "0");
     	automailProperties.setProperty("ChargeDisplay", "false");
-    	
+
+		automailProperties.setProperty("ActivityUnitPrice", "0.224");
+		automailProperties.setProperty("MarkupPercentage", "5.9");
+
+
+
     	// Read properties
 		FileReader inStream = null;
 		try {
@@ -140,17 +148,30 @@ public class Simulation {
 		// Charge Display
 		CHARGE_DISPLAY = Boolean.parseBoolean(automailProperties.getProperty("ChargeDisplay"));
 		System.out.println("#Charge Display: " + CHARGE_DISPLAY);
+		// //Activity Unit Price
+		ACTIVITY_UNIT_PRICE = Double.parseDouble(automailProperties.getProperty("ActivityUnitPrice"));
+		// System.out.println("#Activity Unit Price : " + ACTIVITY_UNIT_PRICE);
+		// //Markup Percentage
+		MARKUP_PERCENTAGE = Double.parseDouble(automailProperties.getProperty("MarkupPercentage"));
+		// System.out.println("#Markup Percentage : " + MARKUP_PERCENTAGE + "%");
+		
 		
 		return automailProperties;
     }
     
     static class ReportDelivery implements IMailDelivery {
-    	
+
     	/** Confirm the delivery and calculate the total score */
     	public void deliver(MailItem deliveryItem){
     		if(!MAIL_DELIVERED.contains(deliveryItem)){
     			MAIL_DELIVERED.add(deliveryItem);
-                System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
+				String chargeStatistics;
+				if (CHARGE_DISPLAY) {
+					chargeStatistics = calculator.getChargeString(deliveryItem.getDestFloor());
+				} else {
+					chargeStatistics = "";
+				}
+                System.out.printf("T: %3d > Delivered(%4d) [%s%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString(),chargeStatistics);
     			// Calculate delivery score
     			total_delay += calculateDeliveryDelay(deliveryItem);
     		}
@@ -177,5 +198,8 @@ public class Simulation {
         System.out.println("T: "+Clock.Time()+" | Simulation complete!");
         System.out.println("Final Delivery time: "+Clock.Time());
         System.out.printf("Delay: %.2f%n", total_delay);
+		if (CHARGE_DISPLAY) {
+			calculator.chargeStatistics();
+		}
     }
 }
