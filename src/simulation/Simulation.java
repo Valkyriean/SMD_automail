@@ -34,7 +34,7 @@ public class Simulation {
     private static ArrayList<MailItem> MAIL_DELIVERED;
     private static double total_delay = 0;
     private static WifiModem wModem = null;
-	public static ChargeCalculator calculator;
+	// public static ChargeCalculator calculator;
     public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     	
     	/** Load properties for simulation based on either default or a properties file.**/
@@ -71,7 +71,8 @@ public class Simulation {
 		} catch (Exception mException) {
 			mException.printStackTrace();
 		}
-        calculator = new ChargeCalculator(ACTIVITY_UNIT_PRICE,MARKUP_PERCENTAGE, wModem);
+        ChargeCalculator calculator = ChargeCalculator.getInstance();
+		calculator.initialize(ACTIVITY_UNIT_PRICE,MARKUP_PERCENTAGE, wModem, Building.MAILROOM_LOCATION,CHARGE_THRESHOLD);
 		
         /**
          * This code section is for running a simulation
@@ -165,12 +166,10 @@ public class Simulation {
     	public void deliver(MailItem deliveryItem){
     		if(!MAIL_DELIVERED.contains(deliveryItem)){
     			MAIL_DELIVERED.add(deliveryItem);
-				String chargeStatistics;
+				String chargeStatistics = "";
 				if (CHARGE_DISPLAY) {
-					chargeStatistics = calculator.getChargeString(deliveryItem.getDestFloor());
-				} else {
-					chargeStatistics = "";
-				}
+					chargeStatistics = ChargeCalculator.getInstance().getChargeString(deliveryItem.getDestFloor());
+				} 
                 System.out.printf("T: %3d > Delivered(%4d) [%s%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString(),chargeStatistics);
     			// Calculate delivery score
     			total_delay += calculateDeliveryDelay(deliveryItem);
@@ -199,7 +198,7 @@ public class Simulation {
         System.out.println("Final Delivery time: "+Clock.Time());
         System.out.printf("Delay: %.2f%n", total_delay);
 		if (CHARGE_DISPLAY) {
-			calculator.chargeStatistics();
+			ChargeCalculator.getInstance().chargeStatistics();
 		}
     }
 }

@@ -17,6 +17,7 @@ public class MailPool {
 	private class Item {
 		int destination;
 		MailItem mailItem;
+		int priority;
 		// Use stable sort to keep arrival time relative positions
 		
 		public Item(MailItem mailItem) {
@@ -29,10 +30,15 @@ public class MailPool {
 		@Override
 		public int compare(Item i1, Item i2) {
 			int order = 0;
-			if (i1.destination < i2.destination) {
+			if(i1.priority < i2.priority){
+				order = 1;
+			} else if (i1.priority > i2.priority){
+				order = -1;
+			}else if (i1.destination < i2.destination) {
 				order = 1;
 			} else if (i1.destination > i2.destination) {
 				order = -1;
+				
 			}
 			return order;
 		}
@@ -54,6 +60,7 @@ public class MailPool {
 	public void addToPool(MailItem mailItem) {
 		Item item = new Item(mailItem);
 		pool.add(item);
+		item.priority = ChargeCalculator.getInstance().priority(item.destination);
 		pool.sort(new ItemComparator());
 	}
 	
