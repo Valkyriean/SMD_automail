@@ -15,6 +15,7 @@ import com.unimelb.swen30006.wifimodem.WifiModem;
 import automail.Automail;
 import automail.MailItem;
 import automail.MailPool;
+import automail.IChargeCalculator;
 import automail.ChargeCalculator;
 
 /**
@@ -34,7 +35,6 @@ public class Simulation {
     private static ArrayList<MailItem> MAIL_DELIVERED;
     private static double total_delay = 0;
     private static WifiModem wModem = null;
-	// public static ChargeCalculator calculator;
     public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     	
     	/** Load properties for simulation based on either default or a properties file.**/
@@ -71,7 +71,7 @@ public class Simulation {
 		} catch (Exception mException) {
 			mException.printStackTrace();
 		}
-        ChargeCalculator calculator = ChargeCalculator.getInstance();
+		ChargeCalculator calculator = ChargeCalculator.getInstance();
 		calculator.initialize(ACTIVITY_UNIT_PRICE,MARKUP_PERCENTAGE, wModem, Building.MAILROOM_LOCATION,CHARGE_THRESHOLD);
 		
         /**
@@ -112,7 +112,7 @@ public class Simulation {
     	automailProperties.setProperty("ChargeDisplay", "false");
 
 		automailProperties.setProperty("ActivityUnitPrice", "0.224");
-		automailProperties.setProperty("MarkupPercentage", "5.9");
+		automailProperties.setProperty("MarkupPercentage", "0.059");
 
 
 
@@ -151,10 +151,8 @@ public class Simulation {
 		System.out.println("#Charge Display: " + CHARGE_DISPLAY);
 		// //Activity Unit Price
 		ACTIVITY_UNIT_PRICE = Double.parseDouble(automailProperties.getProperty("ActivityUnitPrice"));
-		// System.out.println("#Activity Unit Price : " + ACTIVITY_UNIT_PRICE);
 		// //Markup Percentage
 		MARKUP_PERCENTAGE = Double.parseDouble(automailProperties.getProperty("MarkupPercentage"));
-		// System.out.println("#Markup Percentage : " + MARKUP_PERCENTAGE + "%");
 		
 		
 		return automailProperties;
