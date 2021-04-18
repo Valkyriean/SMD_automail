@@ -134,9 +134,9 @@ public class ChargeCalculator{
         System.out.printf("The total billable activity: %.2f\n",billableActivity);
         System.out.printf("The total activity cost: %.2f\n",totalActivityCost);
         System.out.printf("The total service cost: %.2f\n",totalServiceCost);
+        System.out.printf("The total number of lookups: %d\n",totalSuccess + totalFailure);
         System.out.printf("The total number of successful lookups: %d\n",totalSuccess);
         System.out.printf("The total number of failed lookups: %d\n",totalFailure);
-       
     }
 
     public void finish(){
