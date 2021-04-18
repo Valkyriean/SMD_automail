@@ -10,12 +10,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 
-import com.unimelb.swen30006.wifimodem.WifiModem;
 
 import automail.Automail;
 import automail.MailItem;
 import automail.MailPool;
-import automail.IChargeCalculator;
 import automail.ChargeCalculator;
 
 /**
@@ -34,7 +32,6 @@ public class Simulation {
     
     private static ArrayList<MailItem> MAIL_DELIVERED;
     private static double total_delay = 0;
-    private static WifiModem wModem = null;
     public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     	
     	/** Load properties for simulation based on either default or a properties file.**/
@@ -63,16 +60,8 @@ public class Simulation {
         Integer seed = seedMap.get(true);
         System.out.println("#A Random Seed: " + (seed == null ? "null" : seed.toString()));
         
-        // Install the modem & turn on the modem
-        try {
-        	System.out.println("Setting up Wifi Modem");
-        	wModem = WifiModem.getInstance(Building.MAILROOM_LOCATION);
-			System.out.println(wModem.Turnon());
-		} catch (Exception mException) {
-			mException.printStackTrace();
-		}
-		ChargeCalculator calculator = ChargeCalculator.getInstance();
-		calculator.initialize(ACTIVITY_UNIT_PRICE,MARKUP_PERCENTAGE, wModem, Building.MAILROOM_LOCATION,CHARGE_THRESHOLD);
+		// Config charge calculator singleton with required infromations
+		ChargeCalculator.getInstance().congif(ACTIVITY_UNIT_PRICE, MARKUP_PERCENTAGE, Building.MAILROOM_LOCATION,CHARGE_THRESHOLD);
 		
         /**
          * This code section is for running a simulation
@@ -99,7 +88,8 @@ public class Simulation {
             Clock.Tick();
         }
         printResults();
-        System.out.println(wModem.Turnoff());
+
+        ChargeCalculator.getInstance().finish();
     }
     
     static private Properties setUpProperties() throws IOException {
@@ -110,11 +100,8 @@ public class Simulation {
     	automailProperties.setProperty("Mail_to_Create", "80");
     	automailProperties.setProperty("ChargeThreshold", "0");
     	automailProperties.setProperty("ChargeDisplay", "false");
-
 		automailProperties.setProperty("ActivityUnitPrice", "0.224");
 		automailProperties.setProperty("MarkupPercentage", "0.059");
-
-
 
     	// Read properties
 		FileReader inStream = null;
@@ -153,13 +140,11 @@ public class Simulation {
 		ACTIVITY_UNIT_PRICE = Double.parseDouble(automailProperties.getProperty("ActivityUnitPrice"));
 		// //Markup Percentage
 		MARKUP_PERCENTAGE = Double.parseDouble(automailProperties.getProperty("MarkupPercentage"));
-		
-		
+
 		return automailProperties;
     }
     
     static class ReportDelivery implements IMailDelivery {
-
     	/** Confirm the delivery and calculate the total score */
     	public void deliver(MailItem deliveryItem){
     		if(!MAIL_DELIVERED.contains(deliveryItem)){
@@ -180,9 +165,9 @@ public class Simulation {
     			}
     		}
     	}
-
     }
     
+	
     private static double calculateDeliveryDelay(MailItem deliveryItem) {
     	// Penalty for longer delivery times
     	final double penalty = 1.2;
@@ -190,6 +175,7 @@ public class Simulation {
         // Take (delivery time - arrivalTime)**penalty * (1+sqrt(priority_weight))
         return Math.pow(Clock.Time() - deliveryItem.getArrivalTime(),penalty)*(1+Math.sqrt(priority_weight));
     }
+
 
     public static void printResults(){
         System.out.println("T: "+Clock.Time()+" | Simulation complete!");

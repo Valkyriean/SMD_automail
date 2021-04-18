@@ -1,12 +1,12 @@
 package automail;
 
-import com.unimelb.swen30006.wifimodem.WifiModem;
+import automail.IServiceFeeAdapter;
 
 /** This class calculates the charge, cost, activity units, activity cost
  *  and records the serivce fee and statistics information 
  *  by singleton design mode  
  */
-public class ChargeCalculator implements IChargeCalculator{
+public class ChargeCalculator{
     /** Represents the activity unit of look up */
     private final double LOOK_UP_ACTIVITY_UNIT = 0.1d;
     /** Represents the activity unit of moven up/down one floor */
@@ -14,9 +14,10 @@ public class ChargeCalculator implements IChargeCalculator{
     /** Represents factor to calculate the charge */
     private final int WHOLE_TRIP_FACTOR =2;
     
+    private IServiceFeeAdapter serviceFeeAdapter = null;
+
     private double unitPrice;
     private double markUpPercentage;
-    private WifiModem wModem;
     private int groundFloor;
     private double threshold;
 
@@ -50,6 +51,7 @@ public class ChargeCalculator implements IChargeCalculator{
         totalServiceCost = 0d;
         totalSuccess = 0;
         totalFailure = 0;
+        serviceFeeAdapter = new ServiceFeeAdapter();
     }
 
     /**
@@ -59,18 +61,17 @@ public class ChargeCalculator implements IChargeCalculator{
      * @param  groundfloor position of mailroom
      * @param  threshold threshold to judge the mail is priority or not
      */
-    public void initialize(double unitPrice, double markUpPercentage,WifiModem wModem,int groundFloor, double threshold){
+    public void congif(double unitPrice, double markUpPercentage,int groundFloor, double threshold){
         this.unitPrice = unitPrice;
         this.markUpPercentage = markUpPercentage;
-        this.wModem = wModem;
         this.groundFloor = groundFloor;
         this.threshold = threshold;
     }
 
 
     // get the servive fee by invoking the WifiModem API
-    private double getServiceFee(int destination_floor){
-        return wModem.forwardCallToAPI_LookupPrice(destination_floor);     
+    private ServiceData getServiceFee(int destination_floor){
+        return serviceFeeAdapter.getServiceFee(destination_floor)
     }
 
 
@@ -92,15 +93,12 @@ public class ChargeCalculator implements IChargeCalculator{
      * @param destination_floor  destination of the mail
      * @return a string contains the charge cost fee and activity unit in two decimal places
      */
-    @Override
     public String getChargeString(int destination_floor){  
-        int lookupCount = 0;
+        ServiceData serviceData = serviceFeeAdapter.getServiceFee(destination_floor);
+        int lookupCount = serviceData.lookupCount;
         // look up the serviceFee until succeed
-        double serviceFee;
-        do{
-            serviceFee = getServiceFee(destination_floor);
-            lookupCount++;
-        } while (serviceFee < 0);
+        double serviceFee = serviceData.serviceFee;
+
         // calculate each part of charge
         double activityUnit = getActivityUnit(destination_floor, lookupCount);
         double activityCost = activityUnit * unitPrice;
@@ -116,12 +114,10 @@ public class ChargeCalculator implements IChargeCalculator{
 
     // get the expected cost
     private double getExpectedCost(int destination_floor){
-        int lookupCount = 0;
-        double serviceFee;
-        do{
-            serviceFee = getServiceFee(destination_floor);
-            lookupCount++;
-        } while (serviceFee < 0);
+        ServiceData serviceData = serviceFeeAdapter.getServiceFee(destination_floor);
+        int lookupCount = serviceData.lookupCount;
+        // look up the serviceFee until succeed
+        double serviceFee = serviceData.serviceFee;
         double tenantCharge = getTenantCharge(destination_floor, serviceFee);
         billableActivity += lookupCount * LOOK_UP_ACTIVITY_UNIT;
         totalSuccess++;
@@ -133,7 +129,6 @@ public class ChargeCalculator implements IChargeCalculator{
     /**
      * print the statistics information
      */
-    @Override
     public void chargeStatistics(){
         System.out.printf("The total number of items delivered: %d\n", totalDelivered);
         System.out.printf("The total billable activity: %.2f\n",billableActivity);
@@ -141,13 +136,18 @@ public class ChargeCalculator implements IChargeCalculator{
         System.out.printf("The total service cost: %.2f\n",totalServiceCost);
         System.out.printf("The total number of successful lookups: %d\n",totalSuccess);
         System.out.printf("The total number of failed lookups: %d\n",totalFailure);
+       
     }
+
+    public void finish(){
+        serviceFeeAdapter.finish();
+    }
+
 
     /**
      * @param destination_floor destination of mail
      * @return priority of mail 
     */
-    @Override
     public int priority(int destination_floor){
         if(getExpectedCost(destination_floor) > threshold){
             return 1;
