@@ -103,5 +103,4 @@ public class MailPool {
 	public void registerWaiting(Robot robot) { // assumes won't be there already
 		robots.add(robot);
 	}
-
 }

@@ -15,6 +15,7 @@ public interface IServiceFeeAdapter{
     public void finish();
 }
 
+// Class to encapsulate two return variables of different type
 class ServiceData{
     double serviceFee;
     int lookupCount;
