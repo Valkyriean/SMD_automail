@@ -1,26 +1,21 @@
 package automail;
 
-import automail.IServiceFeeAdapter;
-
 /** This class calculates the charge, cost, activity units, activity cost
- *  and records the serivce fee and statistics information 
- *  by singleton design mode  
+ *  and records the service fee and statistics information 
+ *  by singleton design model  
  */
 public class ChargeCalculator{
     /** Represents the activity unit of look up */
     private final double LOOK_UP_ACTIVITY_UNIT = 0.1d;
-    /** Represents the activity unit of moven up/down one floor */
+    /** Represents the activity unit of move up/down one floor */
     private final int MOVEMENT_ACTIVITY_UNIT = 5;
     /** Represents factor to calculate the charge */
     private final int WHOLE_TRIP_FACTOR =2;
-    
     private IServiceFeeAdapter serviceFeeAdapter = null;
-
     private double unitPrice;
     private double markUpPercentage;
     private int groundFloor;
     private double threshold;
-
     // used to record statistics information
     private int totalDelivered;
     private double billableActivity;
@@ -28,11 +23,13 @@ public class ChargeCalculator{
     private double totalServiceCost;
     private int totalSuccess;
     private int totalFailure;
-
+    
+    // single instance of ChargeCalculator
     private static ChargeCalculator instance = null;
 
+    
     /**
-     *
+     * Singleton get instance function
      * @return  instance of this class
      */
     public static ChargeCalculator getInstance(){
@@ -42,7 +39,8 @@ public class ChargeCalculator{
         return instance;
     }
 
-    // construcator
+    
+    // Constructor
     private ChargeCalculator(){
         // initialize statistics information
         totalDelivered = 0;
@@ -54,27 +52,23 @@ public class ChargeCalculator{
         serviceFeeAdapter = new ServiceFeeAdapter();
     }
 
+    
     /**
+     * config the calculator with properties
      * @param  unitPrice  unit price of each activity unit
-     * @param  markUpPercentage  percenet of mark up
+     * @param  markUpPercentage  percent of mark up
      * @param  wModem  WifiModem instance
-     * @param  groundfloor position of mailroom
+     * @param  groundfloor position of mail room
      * @param  threshold threshold to judge the mail is priority or not
      */
-    public void congif(double unitPrice, double markUpPercentage,int groundFloor, double threshold){
+    public void config(double unitPrice, double markUpPercentage,int groundFloor, double threshold){
         this.unitPrice = unitPrice;
         this.markUpPercentage = markUpPercentage;
         this.groundFloor = groundFloor;
         this.threshold = threshold;
     }
 
-
-    // get the servive fee by invoking the WifiModem API
-    private ServiceData getServiceFee(int destination_floor){
-        return serviceFeeAdapter.getServiceFee(destination_floor)
-    }
-
-
+    
     // calculate the activity units
     private double getActivityUnit(int destination_floor, int lookupCount){
         return (destination_floor - groundFloor) * WHOLE_TRIP_FACTOR * MOVEMENT_ACTIVITY_UNIT
@@ -86,23 +80,21 @@ public class ChargeCalculator{
     private double getTenantCharge(int destination_floor, double serviceFee){
         return (serviceFee + getActivityUnit(destination_floor, 1) * unitPrice) * (1 + markUpPercentage);
     }
-
+    
 
 	/**
-     * Calculate the real charge and each part of charge
+     * Return the charge information upon successful delivery
      * @param destination_floor  destination of the mail
      * @return a string contains the charge cost fee and activity unit in two decimal places
      */
     public String getChargeString(int destination_floor){  
         ServiceData serviceData = serviceFeeAdapter.getServiceFee(destination_floor);
         int lookupCount = serviceData.lookupCount;
-        // look up the serviceFee until succeed
         double serviceFee = serviceData.serviceFee;
-
-        // calculate each part of charge
         double activityUnit = getActivityUnit(destination_floor, lookupCount);
         double activityCost = activityUnit * unitPrice;
         double tenantCharge = getTenantCharge(destination_floor, serviceFee);
+        // record statistical information
         totalDelivered++;
         billableActivity += activityUnit;
         totalActivityCost += activityCost;
@@ -112,13 +104,14 @@ public class ChargeCalculator{
         return String.format(" | Charge: %.2f | Cost: %.2f | Fee: %.2f | Activity: %.2f", tenantCharge, activityCost + serviceFee, serviceFee, activityUnit);
     }
 
-    // get the expected cost
+    
+    // get the expected cost while only add lookup cost to statistical data
     private double getExpectedCost(int destination_floor){
         ServiceData serviceData = serviceFeeAdapter.getServiceFee(destination_floor);
         int lookupCount = serviceData.lookupCount;
-        // look up the serviceFee until succeed
         double serviceFee = serviceData.serviceFee;
         double tenantCharge = getTenantCharge(destination_floor, serviceFee);
+        // record statistical information
         billableActivity += lookupCount * LOOK_UP_ACTIVITY_UNIT;
         totalSuccess++;
         totalFailure += lookupCount-1;
@@ -126,9 +119,7 @@ public class ChargeCalculator{
     }
 
 
-    /**
-     * print the statistics information
-     */
+    //print the statistics information
     public void chargeStatistics(){
         System.out.printf("The total number of items delivered: %d\n", totalDelivered);
         System.out.printf("The total billable activity: %.2f\n",billableActivity);
@@ -139,12 +130,15 @@ public class ChargeCalculator{
         System.out.printf("The total number of failed lookups: %d\n",totalFailure);
     }
 
+    
+    // Send finish signal to adapter
     public void finish(){
         serviceFeeAdapter.finish();
     }
 
 
     /**
+     * Return the priority of the Mail item
      * @param destination_floor destination of mail
      * @return priority of mail 
     */

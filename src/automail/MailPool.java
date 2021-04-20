@@ -59,8 +59,8 @@ public class MailPool {
      */
 	public void addToPool(MailItem mailItem) {
 		Item item = new Item(mailItem);
-		pool.add(item);
 		item.priority = ChargeCalculator.getInstance().priority(item.destination);
+		pool.add(item);
 		pool.sort(new ItemComparator());
 	}
 	

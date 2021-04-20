@@ -1,8 +1,7 @@
 package automail;
 
 /**
- * a ChargeCalculatot to calculate the charge, priority, 
- * record the statistics information and print out it
+ * Interface to set standard for ServiceFeeAdapter to ensure protected variation
  */
 public interface IServiceFeeAdapter{
 

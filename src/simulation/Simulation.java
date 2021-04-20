@@ -17,7 +17,7 @@ import automail.MailPool;
 import automail.ChargeCalculator;
 
 /**
- * This class simulates the behaviour of AutoMail
+ * This class simulates the behavior of AutoMail
  */
 public class Simulation {
 	private static int NUM_ROBOTS;
@@ -50,7 +50,7 @@ public class Simulation {
         if (args.length == 0 ) { // No arg
         	String seedProp = automailProperties.getProperty("Seed");
         	if (seedProp == null) { // and no property
-        		seedMap.put(false, 0); // so randomise
+        		seedMap.put(false, 0); // so randomize
         	} else { // Use property seed
         		seedMap.put(true, Integer.parseInt(seedProp));
         	}
@@ -60,8 +60,8 @@ public class Simulation {
         Integer seed = seedMap.get(true);
         System.out.println("#A Random Seed: " + (seed == null ? "null" : seed.toString()));
         
-		// Config charge calculator singleton with required infromations
-		ChargeCalculator.getInstance().congif(ACTIVITY_UNIT_PRICE, MARKUP_PERCENTAGE, Building.MAILROOM_LOCATION,CHARGE_THRESHOLD);
+		// config charge calculator singleton with required informations
+		ChargeCalculator.getInstance().config(ACTIVITY_UNIT_PRICE, MARKUP_PERCENTAGE, Building.MAILROOM_LOCATION,CHARGE_THRESHOLD);
 		
         /**
          * This code section is for running a simulation
